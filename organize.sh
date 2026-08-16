@@ -1,9 +1,18 @@
 #!/bin/bash
 
-directory="$1"
+dry_run=false
 
+# Handle command-line arguments
+if [ "$1" = "--dry-run" ]; then
+    dry_run=true
+    directory="$2"
+else
+    directory="$1"
+fi
+
+# Validate directory argument
 if [ -z "$directory" ]; then
-    echo "Usage: ./organize.sh <directory>"
+    echo "Usage: ./organize.sh [--dry-run] <directory>"
     exit 1
 fi
 
@@ -13,7 +22,9 @@ if [ ! -d "$directory" ]; then
 fi
 
 echo "Organizing files in: $directory"
+echo
 
+# Process each file
 for file in "$directory"/*; do
     if [ -f "$file" ]; then
         filename=$(basename "$file")
@@ -23,6 +34,7 @@ for file in "$directory"/*; do
             continue
         fi
 
+        # Extract and normalize extension
         extension="${filename##*.}"
         extension="${extension,,}"
 
@@ -31,24 +43,47 @@ for file in "$directory"/*; do
             category="Others"
         else
             case "$extension" in
-                jpg|jpeg|png|gif|webp) category="Images" ;;
-                pdf|doc|docx|txt) category="Documents" ;;
-                mp4|mkv|avi|mov) category="Videos" ;;
-                mp3|wav|aac|flac) category="Audio" ;;
-                zip|rar|7z|tar|gz) category="Archives" ;;
-                java|py|c|cpp|js|html|css|json|xml|sql) category="Code" ;;
-                *) category="Others" ;;
+                jpg|jpeg|png|gif|webp|svg)
+                    category="Images"
+                    ;;
+                pdf|doc|docx|txt|ppt|pptx|xls|xlsx|csv)
+                    category="Documents"
+                    ;;
+                mp4|mkv|avi|mov|wmv|webm)
+                    category="Videos"
+                    ;;
+                mp3|wav|aac|flac|ogg)
+                    category="Audio"
+                    ;;
+                zip|rar|7z|tar|gz|bz2)
+                    category="Archives"
+                    ;;
+                java|py|c|cpp|js|ts|html|css|json|xml|sql|r)
+                    category="Code"
+                    ;;
+                *)
+                    category="Others"
+                    ;;
             esac
         fi
 
+        # Dry-run mode
+        if [ "$dry_run" = true ]; then
+            echo "[DRY RUN] $filename -> $category"
+            continue
+        fi
+
+        # Create category directory
         mkdir -p "$directory/$category"
 
+        # Move file
         if mv "$file" "$directory/$category/"; then
             echo "$filename -> $category"
         else
-            echo "Error: Could not move $filename"
+            echo "Error: Could not move '$filename'"
         fi
     fi
 done
 
+echo
 echo "Organization complete."
