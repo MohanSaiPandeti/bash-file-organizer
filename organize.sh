@@ -2,6 +2,24 @@
 
 dry_run=false
 
+show_help() {
+    echo "Bash File Organizer"
+    echo
+    echo "Usage:"
+    echo "  ./organize.sh [OPTIONS] <directory>"
+    echo
+    echo "Options:"
+    echo "  --dry-run    Preview changes without moving files"
+    echo "  --help       Show this help message"
+    echo "  -h           Show this help message"
+}
+
+# Handle help
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    show_help
+    exit 0
+fi
+
 # Handle command-line arguments
 if [ "$1" = "--dry-run" ]; then
     dry_run=true
@@ -12,7 +30,8 @@ fi
 
 # Validate directory argument
 if [ -z "$directory" ]; then
-    echo "Usage: ./organize.sh [--dry-run] <directory>"
+    echo "Usage: ./organize.sh [OPTIONS] <directory>"
+    echo "Use './organize.sh --help' for more information."
     exit 1
 fi
 
