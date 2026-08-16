@@ -16,11 +16,42 @@ show_help() {
     echo "  -h           Show this help message"
 }
 
+get_unique_filename() {
+    local destination="$1"
+    local filename
+    local extension
+    local name
+    local counter=1
+    local candidate
+
+    filename=$(basename "$destination")
+
+    # Files with extensions
+    if [[ "$filename" == *.* && "$filename" != .* ]]; then
+        extension=".${filename##*.}"
+        name="${filename%.*}"
+    else
+        extension=""
+        name="$filename"
+    fi
+
+    candidate="$destination"
+
+    while [ -e "$candidate" ]; do
+        candidate="${destination%/*}/${name}_${counter}${extension}"
+        counter=$((counter + 1))
+    done
+
+    echo "$candidate"
+}
+
 organize_file() {
     local file="$1"
     local filename
     local extension
     local category
+    local destination
+    local unique_destination
 
     filename=$(basename "$file")
 
@@ -62,18 +93,30 @@ organize_file() {
         esac
     fi
 
+    destination="$directory/$category/$filename"
+
     # Dry-run mode
     if [ "$dry_run" = true ]; then
-        echo "[DRY RUN] $file -> $category"
+        unique_destination=$(get_unique_filename "$destination")
+
+        if [ "$unique_destination" != "$destination" ]; then
+            echo "[DRY RUN] $file -> $unique_destination"
+        else
+            echo "[DRY RUN] $file -> $destination"
+        fi
+
         return
     fi
 
     # Create category directory
     mkdir -p "$directory/$category"
 
+    # Handle duplicate filenames
+    unique_destination=$(get_unique_filename "$destination")
+
     # Move file
-    if mv "$file" "$directory/$category/"; then
-        echo "$file -> $category"
+    if mv "$file" "$unique_destination"; then
+        echo "$file -> $unique_destination"
     else
         echo "Error: Could not move '$file'"
     fi
