@@ -1,6 +1,7 @@
 #!/bin/bash
 
 dry_run=false
+recursive=false
 
 show_help() {
     echo "Bash File Organizer"
@@ -10,6 +11,7 @@ show_help() {
     echo
     echo "Options:"
     echo "  --dry-run    Preview changes without moving files"
+    echo "  --recursive  Organize files in subdirectories"
     echo "  --help       Show this help message"
     echo "  -h           Show this help message"
 }
@@ -36,19 +38,33 @@ organize_file() {
         category="Others"
     else
         case "$extension" in
-            jpg|jpeg|png|gif|webp|svg) category="Images" ;;
-            pdf|doc|docx|txt|ppt|pptx|xls|xlsx|csv) category="Documents" ;;
-            mp4|mkv|avi|mov|wmv|webm) category="Videos" ;;
-            mp3|wav|aac|flac|ogg) category="Audio" ;;
-            zip|rar|7z|tar|gz|bz2) category="Archives" ;;
-            java|py|c|cpp|js|ts|html|css|json|xml|sql|r) category="Code" ;;
-            *) category="Others" ;;
+            jpg|jpeg|png|gif|webp|svg)
+                category="Images"
+                ;;
+            pdf|doc|docx|txt|ppt|pptx|xls|xlsx|csv)
+                category="Documents"
+                ;;
+            mp4|mkv|avi|mov|wmv|webm)
+                category="Videos"
+                ;;
+            mp3|wav|aac|flac|ogg)
+                category="Audio"
+                ;;
+            zip|rar|7z|tar|gz|bz2)
+                category="Archives"
+                ;;
+            java|py|c|cpp|js|ts|html|css|json|xml|sql|r)
+                category="Code"
+                ;;
+            *)
+                category="Others"
+                ;;
         esac
     fi
 
     # Dry-run mode
     if [ "$dry_run" = true ]; then
-        echo "[DRY RUN] $filename -> $category"
+        echo "[DRY RUN] $file -> $category"
         return
     fi
 
@@ -57,9 +73,9 @@ organize_file() {
 
     # Move file
     if mv "$file" "$directory/$category/"; then
-        echo "$filename -> $category"
+        echo "$file -> $category"
     else
-        echo "Error: Could not move '$filename'"
+        echo "Error: Could not move '$file'"
     fi
 }
 
@@ -69,15 +85,39 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     exit 0
 fi
 
-# Handle command-line arguments
-if [ "$1" = "--dry-run" ]; then
-    dry_run=true
-    directory="$2"
-else
-    directory="$1"
-fi
+# Parse command-line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run)
+            dry_run=true
+            shift
+            ;;
+        --recursive)
+            recursive=true
+            shift
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        -*)
+            echo "Error: Unknown option '$1'"
+            echo "Use './organize.sh --help' for more information."
+            exit 1
+            ;;
+        *)
+            if [ -z "$directory" ]; then
+                directory="$1"
+            else
+                echo "Error: Multiple directories are not supported."
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
 
-# Validate directory argument
+# Validate directory
 if [ -z "$directory" ]; then
     echo "Usage: ./organize.sh [OPTIONS] <directory>"
     echo "Use './organize.sh --help' for more information."
@@ -92,12 +132,18 @@ fi
 echo "Organizing files in: $directory"
 echo
 
-# Process files in the directory
-for file in "$directory"/*; do
-    if [ -f "$file" ]; then
+# Process files
+if [ "$recursive" = true ]; then
+    while IFS= read -r -d '' file; do
         organize_file "$file"
-    fi
-done
+    done < <(find "$directory" -type f -print0)
+else
+    for file in "$directory"/*; do
+        if [ -f "$file" ]; then
+            organize_file "$file"
+        fi
+    done
+fi
 
 echo
 echo "Organization complete."
