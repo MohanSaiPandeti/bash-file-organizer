@@ -13,3 +13,13 @@ exit 1
 fi
 
 echo "Organizing files in: $directory"
+
+for file in "$directory"/*; do
+if [ -f "$file" ]; then
+filename=$(basename "$file")
+extension="${filename##*.}"
+
+echo "File: $filename"
+echo "Extension: $extension"
+fi
+done
