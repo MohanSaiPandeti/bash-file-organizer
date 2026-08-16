@@ -21,5 +21,14 @@ extension="${filename##*.}"
 
 echo "File: $filename"
 echo "Extension: $extension"
+case "$extension" in
+jpg|jpeg|png|gif|webp) category="Images" ;;
+pdf|doc|docx|txt) category="Documents" ;;
+mp4|mkv|avi|mov) category="Videos" ;;
+mp3|wav|aac|flac) category="Audio" ;;
+zip|rar|7z|tar|gz) category="Archives" ;;
+java|py|c|cpp|js|html|css|json|xml|sql) category="Code" ;;
+*) category="Others" ;;
+esac
 fi
 done
